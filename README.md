@@ -109,3 +109,33 @@ Route::get('/', function () {
 </x-layout>
 ```
 
+### Deploying the app
+
+```shell
+git init
+git add .
+git commit -m "initial setup, first route, layout and home page"
+gh repo create
+gh browse
+```
+Use Laravel Cloud to create an App and select the laravel app that should be on Github.
+
+Put Hibernation settings to sleep after 5 minutes to save up money with prototype apps.
+
+"Add Resource" can be used to create a database. "Create and connect a database" → "Create new database cluster".
+
+Save and Deploy after setting up everything.
+
+When we push new changes to the Github Repository, Laravel Cloud automatically deploy the latest version
+
+```php
+// views/home.blade.php
+<p class="mt-2 text-sm text-gray-600">Now this is live on the internet! 🎉</p>
+```
+
+```shell
+git status
+git add .
+git commit -m "auto deployment test"
+git push origin main
+```
