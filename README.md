@@ -143,9 +143,9 @@ git push origin main
 ### MVC and First Controller example
 
 ```shell
+php artisan make:controller
 php artisan make:controller ChirpsController
 php artisan make:controller ChirpsController --resources
-php artisan make:controller
 ```
 
 ```php
@@ -218,4 +218,49 @@ public function index()
         @endforeach
     </div>
 </x-layout>
+```
+
+### Working with Databases
+
+```shell
+php artisan make:migration
+php artisan make:migration create_chirps_table
+```
+
+```php
+// ...
+// added 2 columns: the foreignId("user_id) and string("message", 255)
+public function up(): void
+{
+    Schema::create('chirps', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId("user_id")->nullable()->constrained()->cascadeOnDelete();
+        $table->string("message", 255);
+        $table->timestamps();
+    });
+}
+// ...
+```
+
+```shell
+php artisan migrate
+
+php artisan tinker
+\DB::select('SELECT * from chirps');
+
+\DB::table('chirps')->insert([
+    'user_id' => null,  // Because we don't have a user, we can just leave it off
+    'message' => 'My first chirp in the database!',
+    'created_at' => now(),  // Laravel doesn't give these by default when using DB
+    'updated_at' => now()
+]);
+
+\DB::table('chirps')->get();
+exit
+```
+
+```shell
+php artisan migrate:rollback # rolled back the chirps table creation and also its data
+php artisan migrate
+php artisan migrate:fresh # drops all tables and re-runs migrations (CAREFUL IN PROD)
 ```
