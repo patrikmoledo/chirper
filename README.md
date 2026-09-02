@@ -76,7 +76,7 @@ composer run dev
 main folders:
 
 * app/Models
-* app/Providers (Controllers)
+* app/Http/Controllers (Controllers)
 * resources/views (Views)
 * routes
 * database
@@ -138,4 +138,84 @@ git status
 git add .
 git commit -m "auto deployment test"
 git push origin main
+```
+
+### MVC and First Controller example
+
+```shell
+php artisan make:controller ChirpsController
+php artisan make:controller ChirpsController --resources
+php artisan make:controller
+```
+
+```php
+<?php
+// adding a basic index function to app/Http/Controllers/ChirpsController.php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ChirpsController extends Controller
+{
+    public function index()
+    {
+        return view('home');
+    }
+}
+```
+
+```php
+<?php
+
+use App\Http\Controllers\ChirpsController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [ChirpsController::class, 'index']);
+```
+
+```php
+// updating the index function with sample data
+public function index()
+{
+    $chirps = [
+        [
+            'author' => 'Jane Doe',
+            'message' => 'Just deployed my first Laravel app! 🚀',
+            'time' => '5 minutes ago'
+        ],
+        [
+            'author' => 'John Smith',
+            'message' => 'Laravel makes web development fun again!',
+            'time' => '1 hour ago'
+        ],
+        [
+            'author' => 'Alice Johnson',
+            'message' => 'Working on something cool with Chirper...',
+            'time' => '3 hours ago'
+        ]
+    ];
+
+    return view('home', ['chirps' => $chirps]);
+}
+```
+
+```html
+<x-layout>
+    <x-slot:title>
+        Welcome
+    </x-slot:title>
+    <div class="max-w-2xl mx-auto">
+        @foreach ($chirps as $chirp)
+            <div class="card bg-base-100 shadow mt-8">
+                <div class="card-body">
+                    <div>
+                        <div class="font-semibold">{{ $chirp['author'] }}</div>
+                        <div class="mt-1">{{ $chirp['message'] }}</div>
+                        <div class="text-sm text-gray-500 mt-2">{{ $chirp['time'] }}</div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</x-layout>
 ```
