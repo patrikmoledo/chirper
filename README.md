@@ -264,3 +264,137 @@ php artisan migrate:rollback # rolled back the chirps table creation and also it
 php artisan migrate
 php artisan migrate:fresh # drops all tables and re-runs migrations (CAREFUL IN PROD)
 ```
+
+### Our First Model
+
+```shell
+php artisan make:model
+php artisan make:model Chirp
+php artisan make:model Chirp -mrc
+```
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Chirp extends Model
+{
+    // adding this $fillable variable to protect against mass assignment
+    protected $fillable = [
+        'message',
+    ];
+}
+```
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Chirp extends Model
+{
+    protected $fillable = [
+        'message',
+    ];
+
+    // adding this association
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+
+```php
+// app/Models/User.php
+
+// ...
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+// adding association
+public function chirps(): HasMany
+{
+    return $this->hasMany(Chirp::class);
+}
+// ...
+```
+
+```shell
+php artisan tinker
+
+$user = \App\Models\User::create(['name' => 'Patrik', 'email' => 'patrik@gmail.com', 'password' => bcrypt('password')]);  
+$chirp = $user->chirps()->create(['message' => 'Eloquent makes working with database easy']);
+
+echo $chirp->user->name; // "Eloquent Expert"
+\App\Models\Chirp::all();
+\App\Models\Chirp::latest()->get();
+```
+
+```php
+//app/Http/Controllers/ChirpsController.php
+
+// import the Chirp model
+use app\Models\Chirp.php
+
+class ChirpsController extends Controller
+{
+    public function index()
+    {
+        // remove the sample data and fetch from the db
+        $chirps = Chirp::with('user') // prevents N+1 queries
+            ->latest()
+            ->take(50)
+            ->get();
+
+        return view('home', ['chirps' => $chirps]);
+    }
+    // ...
+}
+```
+
+```html
+<!-- updating the view: forelse/empty/endforelse, accessing the $chirp variable's data -->
+<x-layout>
+    <x-slot:title>
+        Welcome
+    </x-slot:title>
+    <div class="max-w-2xl mx-auto">
+        @forelse ($chirps as $chirp)
+            <div class="card bg-base-100 shadow mt-8">
+                <div class="card-body">
+                    <div>
+                        <div class="font-semibold"> {{ $chirp->user ? $chirp->user->name : 'Anonymous' }}</div>
+                        <div class="mt-1">{{ $chirp->message }}</div>
+                        <div class="text-sm text-gray-500 mt-2">
+                            {{ $chirp->created_at->diffForHumans() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <p class="text-gray-500">No chirps yet. Be the first to chirp!</p>
+        @endforelse
+    </div>
+</x-layout>
+```
+
+```shell
+# useful commands
+
+Chirp::all();
+Chirp::find(1);
+Chirp::where('message', 'like', '%laravel&')->first();
+Chirp::count();
+
+$user->chirps;
+$user->chirps()->create(['message' => 'Hello']);
+$chirp->update(['message' => 'Updated message']);
+$chirp->delete();
+
+```
