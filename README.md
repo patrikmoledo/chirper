@@ -398,3 +398,140 @@ $chirp->update(['message' => 'Updated message']);
 $chirp->delete();
 
 ```
+
+### Showing the feed
+
+```html
+<!-- resources/views/components/chirp.blade.php -->
+@props(['chirp'])
+
+<div class="card bg-base-100 shadow">
+    <div class="card-body">
+        <div class="flex space-x-3">
+            @if($chirp->user)
+                <div class="avatar">
+                    <div class="size-10 rounded-full">
+                    <img src="https://avatars.laravel.cloud/{{ ['62f9c343-20bc-4c10-9f6e-ded48a850b5c', '7cb0dfa8-246f-441c-95a8-f0e0e3b2d4d6?vibe=sunset', 'facae553-65ba-4fa9-975d-55ef659bc569?vibe=daybreak'][rand(0, 2)] }}" 
+                         alt="{{ $chirp->user->name }}'s avatar"
+                         class="rounded-full" />>
+
+                    </div>
+                </div>
+            @else
+                <div class="avatar placeholder">
+                    <div class="size-10 rounded-full">
+                        <img src="<https://avatars.laravel.cloud/f61123d5-0b27-434c-a4ae-c653c7fc9ed6?vibe=stealth>"
+                        alt="Anonymous User"
+                        class="rounded-full" />
+                    </div>
+                </div>
+            @endif
+
+            <div class="min-w-0">
+                <div class="flex items-center gap-1">
+                    <span class="text-sm font-semibold">{{ $chirp->user ? $chirp->user->name : 'Anonymous' }}</span>
+                    <span class="text-base-content/60">·</span>
+                    <span class="text-sm text-base-content/60">{{ $chirp->created_at->diffForHumans() }}</span>
+                </div>
+
+                <p class="mt-1">
+                    {{ $chirp->message }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+```html
+<!-- home.blade.php -->
+
+ <x-layout>
+    <x-slot:title>
+        Home Feed
+    </x-slot:title>
+
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mt-8">Latest Chirps</h1>
+
+        <div class="space-y-4 mt-8">
+            @forelse ($chirps as $chirp)
+                <x-chirp :chirp="$chirp" />
+            @empty
+                <div class="hero py-12">
+                    <div class="hero-content text-center">
+                        <div>
+                            <svg class="mx-auto h-12 w-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            <p class="mt-4 text-base-content/60">No chirps yet. Be the first to chirp!</p>
+                        </div>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+    </div>
+</x-layout>
+```
+
+```shell
+php artisan make:seeder
+php artisan make:seeder ChirpSeeder
+```
+
+```php
+// database/seeders/ChirpSeeder.php
+
+// ...
+use App\Models\User;
+use App\Models\Chirp;
+// ...
+
+// ...
+public function run(): void
+{
+    $users = User::count() < 3
+                ? collect([
+                    User::create([
+                        'name' => 'Patrik Moledo',
+                        'email' => 'patrik@gmail.com',
+                        'password' => bcrypt('password'),
+                    ]),
+                    User::create([
+                        'name' => 'Bob Builder',
+                        'email' => 'bob@gmail.com',
+                        'password' => bcrypt('password'),
+                    ]),
+                    User::create([
+                        'name' => 'Charlie Coder',
+                        'email' => 'charlie@gmail.com',
+                        'password' => bcrypt('password'),
+                    ]),
+                ])
+                : User::take(3)->get();
+    
+    $chirps = [
+        'Just discovered Laravel - where has this been all my life? 🚀',
+        'Building something cool with Chirper today!',
+        'Laravel\'s Eloquent ORM is pure magic ✨',
+        'Deployed my first app with Laravel Cloud. So smooth!',
+        'Who else is loving Blade components?',
+        'Friday deploys with Laravel? No problem! 😎',
+    ];
+
+    foreach ($chirps as $message) {
+        $users->random()->chirps()->create([
+            'message' => $message,
+            'created_at' => now()->subMinutes(rand(5, 1440)),
+        ]);
+    }
+
+}
+
+// ...
+```
+
+```shell
+php artisan db:seed # didn't work
+php artisan db:seed --class=ChirpSeeder
+```
