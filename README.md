@@ -628,3 +628,149 @@ public function store(Request $request)
     return redirect('/')->with('success', 'Your chirp has been posted!');
 }
 ```
+
+## Edit and Delete Chirps
+
+```html
+<!-- update resources/views/components/chirp.blade.php -->
+@props(['chirp'])
+
+<div class="card bg-base-100 shadow">
+    <div class="card-body">
+        <div class="flex space-x-3">
+            @if ($chirp->user)
+                <div class="avatar">
+                    <div class="size-10 rounded-full">
+                        <img src="<https://avatars.laravel.cloud/>{{ urlencode($chirp->user->email) }}"
+                            alt="{{ $chirp->user->name }}'s avatar" class="rounded-full" />
+                    </div>
+                </div>
+            @else
+                <div class="avatar placeholder">
+                    <div class="size-10 rounded-full">
+                        <img src="<https://avatars.laravel.cloud/f61123d5-0b27-434c-a4ae-c653c7fc9ed6?vibe=stealth>"
+                            alt="Anonymous User" class="rounded-full" />
+                    </div>
+                </div>
+            @endif
+
+            <div class="min-w-0 flex-1">
+                <div class="flex justify-between w-full">
+                    <div class="flex items-center gap-1">
+                        <span class="text-sm font-semibold">{{ $chirp->user ? $chirp->user->name : 'Anonymous' }}</span>
+                        <span class="text-base-content/60">·</span>
+                        <span class="text-sm text-base-content/60">{{ $chirp->created_at->diffForHumans() }}</span>
+                    </div>
+
+                    <div class="flex gap-1">
+                        <a href="/chirps/{{ $chirp->id }}/edit" class="btn btn-ghost btn-xs">
+                            Edit
+                        </a>
+                        <form method="POST" action="/chirps/{{ $chirp->id }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                onclick="return confirm('Are you sure you want to delete this chirp?')"
+                                class="btn btn-ghost btn-xs text-error">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <p class="mt-1">{{ $chirp->message }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+```php
+<?php
+
+use App\Http\Controllers\ChirpsController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [ChirpsController::class, 'index']);
+Route::post('/chirps', [ChirpsController::class, 'store']);
+Route::get('/chirps/{chirp}/edit', [ChirpsController::class, 'edit']);
+Route::put('/chirps/{chirp}', [ChirpsController::class, 'update']);
+Route::delete('/chirps/{chirp}', [ChirpsController::class, 'destroy']);
+
+// Route::resource('chirps', ChirpsController::class)
+//     ->only(['store', 'edit', 'update', 'destroy']);
+```
+
+```html
+<!-- create resources/views/chirps/edit.blade.php -->
+<x-layout>
+    <x-slot:title>
+        Edit Chirp
+    </x-slot:title>
+
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mt-8">Edit Chirp</h1>
+
+        <div class="card bg-base-100 shadow mt-8">
+            <div class="card-body">
+                <form method="POST" action="/chirps/{{ $chirp->id }}">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="form-control w-full">
+                        <textarea
+                            name="message"
+                            class="textarea textarea-bordered w-full resize-none @error('message') textarea-error @enderror"
+                            rows="4"
+                            maxlength="255"
+                            required
+                        >{{ old('message', $chirp->message) }}</textarea>
+
+                        @error('message')
+                            <div class="label">
+                                <span class="label-text-alt text-error">{{ $message }}</span>
+                            </div>
+                        @enderror
+                    </div>
+
+                    <div class="card-actions justify-between mt-4">
+                        <a href="/" class="btn btn-ghost btn-sm">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Update Chirp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</x-layout>
+```
+
+```php
+public function edit(Chirp $chirp)
+{
+    // We'll add authorization in lesson 11
+    return view('chirps.edit', compact('chirp'));
+}
+
+public function update(Request $request, Chirp $chirp)
+{
+    // Validate
+    $validated = $request->validate([
+        'message' => 'required|string|max:255',
+    ]);
+
+    // Update
+    $chirp->update($validated);
+
+    return redirect('/')->with('success', 'Chirp updated!');
+}
+
+public function destroy(Chirp $chirp)
+{
+    $chirp->delete();
+
+    return redirect('/')->with('success', 'Chirp deleted!');
+}
+```
